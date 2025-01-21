@@ -5,11 +5,17 @@ class Card:
 
     def __str__(self):
         class_name = self.__class__.__name__
-        capitals = []
+        checked_capitals = []
+        skip_amount = 0
         for index, character in enumerate(class_name):
+            index += skip_amount
             if index != 0:
                 if character == character.upper():
-                    capitals.append(character)
+                    if index not in checked_capitals:
+                        class_name = class_name[:index] + " " + class_name[index:]
+                        checked_capitals.append(index + 1)
+                        skip_amount += 1
+        return class_name
 
 
 class ColouredCard(Card):
@@ -46,8 +52,8 @@ class DrawTwoCard(ColouredCard):
 
 class Piles:
     def __init__(self):
-        deck = []
-        discard = []
+        self.deck = []
+        self.discard = []
 
 
 def generate_piles() -> Piles:

@@ -1,4 +1,5 @@
 import random
+from helper import make_ordinal
 
 colours = ["blue", "red", "green", "yellow"]
 
@@ -24,9 +25,9 @@ class Card:
             value: int = self._value
         except AttributeError:  # this Card class has no colour attribute
             value = None
-        self.name = f"{colour.capitalize()} {value} {class_name}" if colour else class_name
+        self.name = f"{colour.capitalize()}{f' {value} ' if value else ' '}{class_name}" if colour else class_name
 
-    def __str__(self):
+    def __repr__(self):
         return self.name
 
 
@@ -78,18 +79,39 @@ class Piles:
         self.discard = []
 
 
+class Hand:
+    def __init__(self, cards: list[Card]):
+        self.cards = cards
+
+    def add(self, card: Card):
+        self.cards.append(card)
+
+    def use(self, card: Card):
+        if card in self.cards:
+            pass  # actually use the card
+        else:
+            raise AttributeError("Player does not have this card!")
+
+
+class Player:
+    def __init__(self, name: str, hand: Hand):
+        self.name = name
+        self.hand = hand
+
+
 def generate_piles() -> Piles:
     default_deck = []
     for i in range(1, 20):
-        if i < 4:  # only do the following for the first 4 iterations
+        if i <= 4:  # only do the following for the first 4 iterations
             default_deck.append(WildCard())
             default_deck.append(WildCardFour())
         for colour in colours:
-            if i < 2:  # only do the following for the first 2 iterations
+            if i <= 2:  # only do the following for the first 2 iterations
                 default_deck.append(DrawTwoCard(colour))
                 default_deck.append(ReverseCard(colour))
                 default_deck.append(SkipCard(colour))
-            default_deck.append(StandardCard(colour, (i/2).__trunc__()))
+            default_deck.append(StandardCard(colour, (i / 2).__trunc__()))  # add the right values using i
+            #  0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9
 
     return Piles(default_deck)
 
@@ -108,8 +130,26 @@ def request_player_count() -> int:
     return player_count_
 
 
+def request_player_name(index: int) -> str:
+    response = input(f"What is the {make_ordinal(index)} player's name?")
+    try:
+        player_name_ = str(response)
+    except ValueError:
+        print("Please input a valid string.")
+        return request_player_name(index)
+
+    return player_name_
+
+
 player_count = request_player_count()
+
 piles = generate_piles()
-for deck in piles.deck:
-    print(deck)
-print(len(piles.deck))
+
+players = []
+for i in range(1, player_count):
+    player_name = request_player_name(i)
+    players.append(
+        Player(player_name,
+
+               )
+    )

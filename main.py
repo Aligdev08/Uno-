@@ -30,6 +30,15 @@ class Card:
     def __repr__(self):
         return self.name
 
+class Player:
+    def __init__(self, name: str, hand: Hand):
+        self.name = name
+        self.hand = hand
+class Piles:
+    def __init__(self, deck: list[Card]):
+        random.shuffle(deck)
+        self.deck = deck
+        self.discard = []
 
 class ColouredCard(Card):
     def __init__(self, colour: str):
@@ -47,6 +56,8 @@ class StandardCard(ColouredCard):
             raise ValueError("This is not a valid card value!")
         self._value = value
         super().__init__(colour)
+
+    def play(self, piles: Piles, player: Player):
 
 
 class ReverseCard(ColouredCard):
@@ -70,33 +81,6 @@ class WildCardFour(WildCard):
 class DrawTwoCard(ColouredCard):
     def __init__(self, colour: str):
         super().__init__(colour)
-
-
-class Piles:
-    def __init__(self, deck: list):
-        random.shuffle(deck)
-        self.deck = deck
-        self.discard = []
-
-
-class Hand:
-    def __init__(self, cards: list[Card]):
-        self.cards = cards
-
-    def add(self, card: Card):
-        self.cards.append(card)
-
-    def use(self, card: Card):
-        if card in self.cards:
-            pass  # actually use the card
-        else:
-            raise AttributeError("Player does not have this card!")
-
-
-class Player:
-    def __init__(self, name: str, hand: Hand):
-        self.name = name
-        self.hand = hand
 
 
 def generate_piles() -> Piles:
@@ -131,7 +115,7 @@ def request_player_count() -> int:
 
 
 def request_player_name(index: int) -> str:
-    response = input(f"What is the {make_ordinal(index)} player's name?")
+    response = input(f"What is the {make_ordinal(index+1)} player's name?")
     try:
         player_name_ = str(response)
     except ValueError:
@@ -141,15 +125,25 @@ def request_player_name(index: int) -> str:
     return player_name_
 
 
+def get_hand(deck: list[Card]):
+    hand = []
+    for i in range(1, 7):
+        removed_card = deck.pop()
+        hand.append(removed_card)
+
+    return Hand(hand)
+
+
 player_count = request_player_count()
 
 piles = generate_piles()
 
 players = []
-for i in range(1, player_count):
+for i in range(0, player_count):
     player_name = request_player_name(i)
+
     players.append(
         Player(player_name,
-
+               get_hand(piles.deck)
                )
     )

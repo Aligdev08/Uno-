@@ -17,28 +17,28 @@ class Card:
                         class_name = class_name[:index] + " " + class_name[index:]
                         checked_capitals.append(index + 1)
                         skip_amount += 1
-        try:
-            colour: str = self.colour
-        except AttributeError:  # this Card class has no colour attribute
-            colour = None
-        try:
-            value: int = self._value
-        except AttributeError:  # this Card class has no colour attribute
-            value = None
+
+        colour: str = getattr(self, "colour", None)
+        value: int = getattr(self, "_value", None)
+
         self.name = f"{colour.capitalize()}{f' {value} ' if value else ' '}{class_name}" if colour else class_name
 
     def __repr__(self):
         return self.name
 
+
 class Player:
-    def __init__(self, name: str, hand: Hand):
+    def __init__(self, name: str, hand: list[Card]):
         self.name = name
         self.hand = hand
+
+
 class Piles:
     def __init__(self, deck: list[Card]):
         random.shuffle(deck)
         self.deck = deck
         self.discard = []
+
 
 class ColouredCard(Card):
     def __init__(self, colour: str):
@@ -57,7 +57,9 @@ class StandardCard(ColouredCard):
         self._value = value
         super().__init__(colour)
 
-    def play(self, piles: Piles, player: Player):
+    def play(self, piles: Piles, player: Player, hand_index: int):
+        piles.discard.append(self)
+        player.hand.pop(hand_index)
 
 
 class ReverseCard(ColouredCard):
@@ -115,7 +117,7 @@ def request_player_count() -> int:
 
 
 def request_player_name(index: int) -> str:
-    response = input(f"What is the {make_ordinal(index+1)} player's name?")
+    response = input(f"What is the {make_ordinal(index + 1)} player's name?")
     try:
         player_name_ = str(response)
     except ValueError:
@@ -125,13 +127,20 @@ def request_player_name(index: int) -> str:
     return player_name_
 
 
-def get_hand(deck: list[Card]):
+def generate_hand(deck: list[Card]):
     hand = []
-    for i in range(1, 7):
+    for _ in range(1, 7):
         removed_card = deck.pop()
         hand.append(removed_card)
 
-    return Hand(hand)
+    return hand
+
+
+def print_hands(players: list[Player]):
+    for player in players:
+        print(f"-------------------------- Hand of \'{player.name}\' --------------------------\n"
+              f"- {f'\n- '.join(str(card) for card in player.hand)}"
+              )
 
 
 player_count = request_player_count()
@@ -141,9 +150,13 @@ piles = generate_piles()
 players = []
 for i in range(0, player_count):
     player_name = request_player_name(i)
+    player = Player(player_name,
+                    generate_hand(piles.deck)
+                    )
 
     players.append(
-        Player(player_name,
-               get_hand(piles.deck)
-               )
+        player
     )
+
+print_hands(players)
+

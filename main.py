@@ -3,7 +3,12 @@ from helper import make_ordinal
 from abc import abstractmethod
 
 colours = ["blue", "red", "green", "yellow"]
-
+colour_emoji = {
+    "blue": "🔵",
+    "red": "🔴",
+    "green": "🟢",
+    "yellow": "🟡"
+}
 
 class Player:
     def __init__(self, name: str, hand: list["Card"]):
@@ -17,6 +22,11 @@ class Piles:
         self.deck = deck
         self.discard = []
         self.forwards = True
+        self.skip_next = False
+
+    def refresh(self):
+        self.deck = self.discard
+        self.discard = []
 
 
 class Card:
@@ -35,11 +45,14 @@ class Card:
 
         colour: str = getattr(self, "colour", None)
         value: int = getattr(self, "_value", None)
-
+        if colour:
+            emoji = colour_emoji[colour]
+        else:
+            emoji = "✨"
         self.name = (
-            f"{colour.capitalize()}{f' {value} ' if value else ' '}{class_name}"
+            f"{emoji} {colour.capitalize()}{f' {value} ' if value else ' '}{class_name}"
             if colour
-            else class_name
+            else f"{emoji} {class_name}"
         )
 
     @abstractmethod
@@ -88,6 +101,11 @@ class SkipCard(ColouredCard):
     def __init__(self, colour: str):
         super().__init__(colour)
 
+    def play(self, piles: Piles, player: Player, hand_index: int):
+        piles.skip_next = True
+        piles.discard.append(self)
+        player.hand.pop(hand_index)
+        print(f"{player.name} played {self}!")
 
 class WildCard(Card):
     pass
@@ -152,7 +170,7 @@ def request_card_number(max_num: int) -> int:
         card_number_ = int(response)
     except ValueError:
         print("Please input a valid number.")
-        return request_card_number()
+        return request_card_number(max_num)
     if card_number_ > max_num or card_number_ < 1:
         print("Please input a number that's in your hand.")
         return request_card_number(max_num)
@@ -163,8 +181,7 @@ def request_card_number(max_num: int) -> int:
 def generate_hand(deck: list[Card]):
     hand = []
     for _ in range(1, 7):
-        removed_card = deck.pop()
-        hand.append(removed_card)
+        hand.append(deck.pop())
 
     return hand
 
@@ -199,6 +216,13 @@ print_hands(players)
 active_player = 0
 
 while not done:
+    if not piles.deck:
+        piles.refresh()
+    for player in players:
+        if not player.hand:
+            f"\n\n{player.name} has won the game!"
+            done = False
+            break
     player = players[active_player]
     print(
         f"\n--------------------------------------- {player.name}'s turn. ---------------------------------------"
@@ -208,8 +232,9 @@ while not done:
     player.hand[card_number - 1].play(piles, player, card_number - 1)
 
     if piles.forwards:
-        active_player += 1
+        active_player += 1 + int(piles.skip_next)
     else:
-        active_player -= 1
-        if active_player < 0 < len(players):
+        active_player -= 1 + int(piles.skip_next)
+        if 0 < active_player < len(players):
             active_player = len(players) - 1
+    active_player = active_player % len(players)
